@@ -1,0 +1,11 @@
+{
+  "name": "tconnect",
+  "private": true,
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "build": "npm run build -w @tconnect/shared -w @tconnect/routeros -w @tconnect/api -w @tconnect/radius -w @tconnect/admin",
+    "test:unit": "node --test tests/unit/",
+    "verify": "node tests/verify.mjs"
+  },
+  "devDependencies": { "typescript": "^5.6.0" }
+}

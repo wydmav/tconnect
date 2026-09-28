@@ -1,0 +1,18 @@
+
+# Secrets
+.env
+.env.local
+.env.*.local
+# Dependencies and builds
+node_modules/
+.next/
+dist/
+coverage/
+# Local runtime files
+*.log
+tools/.router-state*.json
+.DS_Store
+# Dependencies
+node_module*/
+# Build outputs
+# Local files
