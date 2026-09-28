@@ -2,10 +2,15 @@ T-Connect — Connected Hotspots
 
 Multi-tenant cloud controller & monetization engine for MikroTik hotspot networks.One architecture · five verticals · Lesotho.
 Vertical	What it means
+
 ☕ Connected Hotspots	Cafés, retail, co-working — voucher & day-pass monetization
+
 🏡 Connected Communities	Estates & villages — micro-billing on shared Starlink backhaul
+
 🚌 Connected Buses	Transit Wi-Fi with centralized passes
+
 🏟️ Connected Stadiums	High-density events, VIP tiers
+
 🌳 Connected Parks	Public zones, free tiers with paid upsell
 
 Every vertical runs the same core: MikroTik RouterOS routers, adopted over a one-linescript, managed through encrypted WireGuard tunnels, authenticated against a centralRADIUS + PostgreSQL backend, monetized through plug-in payment gateways(OTTvoucher · EcoCash · MyWallet · xPayments — Phase B).
