@@ -1,0 +1,9 @@
+VENDOR    Mikrotik        14988
+BEGIN-VENDOR  Mikrotik
+ATTRIBUTE Mikrotik-Recv-Limit     1 integer
+ATTRIBUTE Mikrotik-Xmit-Limit     2 integer
+ATTRIBUTE Mikrotik-Total-Limit      3 integer
+ATTRIBUTE Mikrotik-Rate-Limit     8 string
+ATTRIBUTE Mikrotik-Advertise-URL      21  string
+ATTRIBUTE Mikrotik-Advertise-Interval   22  integer
+END-VENDOR  Mikrotik

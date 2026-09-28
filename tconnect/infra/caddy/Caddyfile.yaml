@@ -1,0 +1,13 @@
+{
+    email {$LETSENCRYPT_EMAIL}
+}
+
+{$DOMAIN} {
+    encode zstd gzip
+    handle /api/*      { reverse_proxy tunnel:3000 }
+    handle /adopt/*    { reverse_proxy tunnel:3000 }
+    handle /hb/*       { reverse_proxy tunnel:3000 }
+    handle /cfg/*      { reverse_proxy tunnel:3000 }
+    handle /webhooks/* { reverse_proxy tunnel:3000 }   # Phase B: payment gateways
+    handle             { reverse_proxy admin:3000 }
+}

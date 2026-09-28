@@ -1,0 +1,82 @@
+name: tconnect
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAIN: ${DOMAIN}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [tunnel, admin]
+    networks: [edge]
+
+  # WireGuard hub. api + radius share its network namespace, so they are
+  # directly reachable by routers over the tunnel AND by Caddy on the LAN.
+  tunnel:
+    build: { context: ./infra/wg }
+    restart: unless-stopped
+    cap_add: [NET_ADMIN, NET_RAW]
+    environment:
+      WG_ADDRESS: 10.200.0.1/16
+      WG_MANAGER_TOKEN: ${WG_MANAGER_TOKEN}
+    ports: ["51820:51820/udp"]
+    volumes: [wg_config:/etc/wireguard]
+    networks: [edge, core]
+
+  api:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    restart: unless-stopped
+    network_mode: "service:tunnel"
+    depends_on: [tunnel]
+    environment:
+      DOMAIN: ${DOMAIN}
+      WG_HOST: ${WG_HOST}
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_ADMIN_URL: ${DATABASE_ADMIN_URL}
+      REDIS_URL: ${REDIS_URL}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY}
+      TOKEN_PEPPER: ${TOKEN_PEPPER}
+      SESSION_SECRET: ${SESSION_SECRET}
+      WG_MANAGER_TOKEN: ${WG_MANAGER_TOKEN}
+      SMTP_URL: ${SMTP_URL}
+
+  radius:
+    build: { context: ., dockerfile: apps/radius/Dockerfile }
+    restart: unless-stopped
+    network_mode: "service:tunnel"
+    depends_on: [tunnel]
+    environment:
+      RADIUS_DATABASE_URL: ${RADIUS_DATABASE_URL}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY}
+
+  admin:
+    build: { context: ., dockerfile: apps/admin/Dockerfile }
+    restart: unless-stopped
+    networks: [edge]
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tc_admin
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD}
+      POSTGRES_DB: tconnect
+    volumes: [pg_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tc_admin -d tconnect"]
+      interval: 10s
+    networks: [core]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_URL##*:}"]
+    volumes: [redis_data:/data]
+    networks: [core]
+
+networks: { edge: {}, core: {} }
+volumes: { caddy_data: {}, caddy_config: {}, wg_config: {}, pg_data: {}, redis_data: {} }

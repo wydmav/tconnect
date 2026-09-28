@@ -1,0 +1,7 @@
+:80 {
+    handle /api/*   { reverse_proxy api:3000 }
+    handle /adopt/* { reverse_proxy api:3000 }
+    handle /hb/*    { reverse_proxy api:3000 }
+    handle /cfg/*   { reverse_proxy api:3000 }
+    handle          { reverse_proxy admin:3000 }
+}

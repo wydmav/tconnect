@@ -1,0 +1,64 @@
+name: tconnect-dev
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    ports: ["8080:80"]
+    volumes: ["./infra/caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro"]
+    depends_on: [api, admin]
+    networks: [edge]
+
+  mock-wg:
+    image: node:22-alpine
+    volumes: ["./tools/mock-wg.js:/app/mock-wg.js:ro"]
+    command: node /app/mock-wg.js
+    environment: { WG_MANAGER_TOKEN: localdev }
+    networks: [core]
+
+  api:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    environment:
+      DOMAIN: localhost
+      WG_HOST: hub.localhost
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_ADMIN_URL: ${DATABASE_ADMIN_URL}
+      REDIS_URL: ${REDIS_URL}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY}
+      TOKEN_PEPPER: ${TOKEN_PEPPER}
+      SESSION_SECRET: ${SESSION_SECRET}
+      WG_MANAGER_TOKEN: localdev
+      WG_MANAGER_URL: http://mock-wg:8080
+      COOKIE_SECURE: "false"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_started }
+      mock-wg: { condition: service_started }
+    networks: [edge, core]
+
+  radius:
+    build: { context: ., dockerfile: apps/radius/Dockerfile }
+    environment:
+      RADIUS_DATABASE_URL: ${RADIUS_DATABASE_URL}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY}
+      TOKEN_PEPPER: ${TOKEN_PEPPER}
+    ports: ["1812:1812/udp", "1813:1813/udp"]
+    depends_on: { postgres: { condition: service_healthy } }
+    networks: [core]
+
+  admin:
+    build: { context: ., dockerfile: apps/admin/Dockerfile }
+    networks: [edge]
+
+  postgres:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: tc_admin, POSTGRES_PASSWORD: devadmin, POSTGRES_DB: tconnect }
+    volumes: [pg_dev:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U tc_admin -d tconnect"], interval: 5s, retries: 12 }
+    networks: [core]
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--requirepass", "devredis"]
+    networks: [core]
+
+networks: { edge: {}, core: {} }
+volumes: { pg_dev: {} }
